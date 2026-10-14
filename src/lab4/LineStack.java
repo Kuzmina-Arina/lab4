@@ -18,15 +18,17 @@ import java.util.Stack;
 public class LineStack implements Iterable<String> {
 
     /** Внутреннее хранилище элементов стека. */
-    private final Stack<String> stack = new Stack<>();
+    private final Stack<String> stack;
 
     /** Длина самой большой строки среди элементов стека. */
-    private int maxLineLength = 0;
+    private int maxLineLength;
 
     /**
-     * Создаёт пустой стек строк.
+     * Конструктор по умолчанию. Создаёт пустой стек строк.
      */
     public LineStack() {
+        this.stack = new Stack<>();
+        this.maxLineLength = 0;
     }
 
     /**

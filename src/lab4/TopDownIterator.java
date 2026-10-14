@@ -26,6 +26,14 @@ public class TopDownIterator<T> implements Iterator<T> {
     private int index;
 
     /**
+     * Конструктор по умолчанию. Создаёт итератор по пустому стеку:
+     * {@link #hasNext()} сразу возвращает {@code false}.
+     */
+    public TopDownIterator() {
+        this(new Stack<>());
+    }
+
+    /**
      * Создаёт итератор, установленный на вершину стека.
      *
      * @param stack стек для обхода

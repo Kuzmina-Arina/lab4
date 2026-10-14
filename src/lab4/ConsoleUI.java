@@ -1,25 +1,83 @@
 package lab4;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Scanner;
 
 /**
- * Класс для работы с консолью.
+ * Консольный интерфейс программы.
  * <p>
- * Весь ввод данных от пользователя и весь вывод на экран в программе
- * выполняются только через этот класс.
+ * Класс выполняет задание целиком: запрашивает у пользователя пути к файлам,
+ * читает строки исходного файла в стек, записывает их в файл результата
+ * в обратном порядке и выводит статистику. Весь ввод с клавиатуры и весь
+ * вывод на экран в программе выполняются только через этот класс,
+ * а работа с файлами поручена {@link TextFileService}.
  */
 public class ConsoleUI {
 
+    /** Путь к исходному файлу, используемый при пустом вводе. */
+    private static final String DEFAULT_INPUT = "input.txt";
+
+    /** Путь к файлу результата, используемый при пустом вводе. */
+    private static final String DEFAULT_OUTPUT = "output.txt";
+
     /** Сканер для чтения ввода пользователя с клавиатуры. */
-    private final Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8);
+    private final Scanner scanner;
+
+    /** Объект для чтения и записи текстовых файлов. */
+    private final TextFileService fileService;
 
     /**
-     * Создаёт объект для работы с консолью, читающий ввод с клавиатуры в кодировке UTF-8.
+     * Конструктор по умолчанию. Создаёт консольный интерфейс
+     * со стандартным объектом для работы с файлами.
      */
     public ConsoleUI() {
+        this(new TextFileService());
+    }
+
+    /**
+     * Создаёт консольный интерфейс с заданным объектом для работы с файлами.
+     *
+     * @param fileService объект для работы с файлами
+     */
+    public ConsoleUI(TextFileService fileService) {
+        this.scanner = new Scanner(System.in, StandardCharsets.UTF_8);
+        this.fileService = fileService;
+    }
+
+    /**
+     * Выполняет задание.
+     * <p>
+     * Последовательность действий: запросить пути к файлам, прочитать строки
+     * в стек, записать их в файл результата в обратном порядке, вывести
+     * содержимое стека и статистику. Ошибки работы с файлами перехватываются
+     * и выводятся пользователю, программа при этом не падает.
+     */
+    public void run() {
+        Path input = askPath("Введите путь к исходному файлу", DEFAULT_INPUT);
+        Path output = askPath("Введите путь к файлу результата", DEFAULT_OUTPUT);
+
+        try {
+            List<String> lines = fileService.readLines(input);
+
+            LineStack stack = new LineStack();
+            for (String line : lines) {
+                stack.push(line);
+            }
+
+            // LineStack реализует Iterable, его итератор идёт от вершины к дну,
+            // поэтому строки записываются в обратном порядке, а стек остаётся целым
+            fileService.writeLines(output, stack);
+
+            showStack(stack);
+            showStats(stack.size(), stack.maxLineLength());
+            System.out.println("Строки в обратном порядке сохранены в файл: " + output.toAbsolutePath());
+        } catch (IOException e) {
+            System.err.println("Ошибка работы с файлом: " + e.getMessage());
+        }
     }
 
     /**
@@ -32,7 +90,7 @@ public class ConsoleUI {
      * @param defaultValue путь, используемый при пустом вводе
      * @return путь к файлу, введённый пользователем, или путь по умолчанию
      */
-    public Path askPath(String prompt, String defaultValue) {
+    private Path askPath(String prompt, String defaultValue) {
         System.out.print(prompt + " [" + defaultValue + "]: ");
         String input = scanner.hasNextLine() ? scanner.nextLine().trim() : "";
         return Path.of(input.isEmpty() ? defaultValue : input);
@@ -46,7 +104,7 @@ public class ConsoleUI {
      *
      * @param stack стек строк для вывода
      */
-    public void showStack(LineStack stack) {
+    private void showStack(LineStack stack) {
         System.out.println("Содержимое стека (от вершины к дну):");
         Iterator<String> iterator = stack.iterator();
         int position = 1;
@@ -62,26 +120,8 @@ public class ConsoleUI {
      * @param lineCount количество строк
      * @param maxLength длина самой большой строки
      */
-    public void showStats(int lineCount, int maxLength) {
+    private void showStats(int lineCount, int maxLength) {
         System.out.println("Количество строк: " + lineCount);
         System.out.println("Длина самой большой строки: " + maxLength);
-    }
-
-    /**
-     * Выводит информационное сообщение.
-     *
-     * @param message текст сообщения
-     */
-    public void showMessage(String message) {
-        System.out.println(message);
-    }
-
-    /**
-     * Выводит сообщение об ошибке в поток ошибок.
-     *
-     * @param message текст сообщения об ошибке
-     */
-    public void showError(String message) {
-        System.err.println(message);
     }
 }
